@@ -14,61 +14,11 @@ class BoxCollider
             : 
         left(min_point_left) , right(max_point_right) , top(max_point_top) , bottom(max_point_bottom) {}
     public:
-        bool IsOverlappingFromLeft(BoxCollider collider) const
+        bool IsCollidingWith(const BoxCollider collider) const
         {
-            return collider.right > left && collider.left < left;
-        } 
-        bool IsOverlappingFromRight(BoxCollider collider) const
-        {
-            return right > collider.left && left < collider.left;
-        }
-        bool IsOverlappingFromTop(BoxCollider collider) const
-        {
-            return collider.bottom > top && collider.top <= top;
-        }
-        bool IsOverlappingFromBottom(BoxCollider collider) const
-        {
-            return bottom > collider.top && top <= collider.top;
-        }
-        bool IsOverlappingFromInsideX(BoxCollider collider) const
-        {
-            return left <= collider.left && right >= collider.right;
-        }
-        bool IsOverlappingFromOutsideX(BoxCollider collider) const
-        {
-            return collider.left <= left && collider.right >= right;
-        }
-        bool IsOverlappingFromInsideY(BoxCollider collider) const
-        {
-            return top <= collider.top && bottom >= collider.bottom;
-        }
-        bool IsOverlappingFromOutsideY(BoxCollider collider) const
-        {
-            return collider.top <= top && collider.bottom >= bottom;
-        }
-        bool IsOverlappedOnX(BoxCollider collider) const
-        {
-            return  IsOverlappingFromInsideX(collider) 
-                            || 
-                    IsOverlappingFromOutsideX(collider) 
-                            || 
-                    IsOverlappingFromLeft(collider) 
-                            || 
-                    IsOverlappingFromRight(collider);
-        }
-        bool IsOverlappedOnY(BoxCollider collider) const
-        {
-            return IsOverlappingFromInsideY(collider) 
-                            || 
-                    IsOverlappingFromOutsideY(collider) 
-                            || 
-                    IsOverlappingFromTop(collider) 
-                            || 
-                    IsOverlappingFromBottom(collider);
-        }
-        bool IsCollidingWith(BoxCollider collider) const
-        {
-            return IsOverlappedOnX(collider) && IsOverlappedOnY(collider); 
+            bool x_overlap = left < collider.right && right > collider.left;
+            bool y_overlap = top < collider.bottom && bottom > collider.top;
+            return x_overlap && y_overlap;
         }
     public:
         int GetLeft() const
@@ -118,9 +68,9 @@ class CollisionTester
 int main()
 {
     BoxCollider A { 10 , 20 , 10 , 20 };
-    BoxCollider B { 15 , 25 , 15 , 25 };
+    BoxCollider B { 10 , 25 , 15 , 25 };
 
-    std::cout << CollisionTester::Test({A , B}).size();
+    std::cout << A.IsCollidingWith(B);
 
     return 0;
 }
