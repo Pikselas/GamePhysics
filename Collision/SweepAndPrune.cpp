@@ -1,6 +1,7 @@
 #include<iostream>
 #include<algorithm>
 #include<vector>
+#include<map>
 
 class BoxCollider
 {
@@ -42,24 +43,18 @@ class BoxCollider
 class CollisionTester
 {
     public:
-        static bool Predicator(const BoxCollider& a , const BoxCollider& b)
+        static bool Predicator(const BoxCollider* a , const BoxCollider* b)
         {
-            return a.GetLeft() < b.GetLeft();
+            return a->GetLeft() < b->GetLeft();
         }
-        static std::vector<std::pair<BoxCollider , BoxCollider>> Test(const std::vector<BoxCollider>& colliders)
+        static std::vector<std::pair<BoxCollider* , BoxCollider*>> Test(std::vector<BoxCollider*> colliders)
         {
-            auto colliders_ = colliders;
-            std::vector<std::pair<BoxCollider , BoxCollider>> collision_list;
-            std::sort(colliders_.begin() , colliders_.end() , Predicator);
-            for(unsigned int i = 0 ; i < colliders_.size() ; ++i)
+            std::vector<std::pair<BoxCollider* , BoxCollider*>> collision_list;
+            std::sort(colliders.begin() , colliders.end() , Predicator);
+            for(unsigned int i = 0 ; i < colliders.size() - 1 ; ++i)
             {
-                for(int j = i + 1 ; j < colliders_.size() ; ++j)
-                {
-                    if(colliders_[i].IsCollidingWith(colliders_[j]))
-                    {
-                        collision_list.emplace_back(colliders_[i] , colliders_[j]);
-                    }
-                }
+                if(colliders[i]->IsCollidingWith(*colliders[i + 1]))
+                    collision_list.emplace_back(colliders[i] , colliders[i + 1]);
             }
             return collision_list;
         }
@@ -68,9 +63,26 @@ class CollisionTester
 int main()
 {
     BoxCollider A { 10 , 20 , 10 , 20 };
-    BoxCollider B { 10 , 25 , 15 , 25 };
+    BoxCollider B { 30 , 35 , 25 , 45 };
+    BoxCollider C { 15 , 25 , 15 , 25 };
+    BoxCollider D { 34 , 45 , 28 , 40 };
 
-    std::cout << A.IsCollidingWith(B);
+    std::map<BoxCollider* , std::string> m = 
+    {
+        { &A , "A" } ,
+        { &B , "B" } ,
+        { &C , "C" } ,
+        { &D , "D" }
+    };
+
+    std::vector<BoxCollider*> colliders = { &A , &B , &C , &D };
+
+    auto collision_list = CollisionTester::Test(colliders);
+
+    for(auto& pair : collision_list)
+    {
+        std::cout << m[pair.first] << " is colliding with " << m[pair.second] << std::endl;
+    }
 
     return 0;
 }
