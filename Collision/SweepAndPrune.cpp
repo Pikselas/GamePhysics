@@ -4,42 +4,7 @@
 #include<map>
 #include<type_traits>
 
-class BoxCollider
-{
-private:
-    int left;
-    int right;
-    int top;
-    int bottom;
-public:
-    BoxCollider(int left, int right, int top, int bottom)
-        :
-        left(left), right(right), top(top), bottom(bottom) {}
-public:
-    bool IsCollidingWith(const BoxCollider collider) const
-    {
-        bool x_overlap = left < collider.right && right > collider.left;
-        bool y_overlap = top < collider.bottom && bottom > collider.top;
-        return x_overlap && y_overlap;
-    }
-public:
-    int GetLeft() const
-    {
-        return left;
-    }
-    int GetRight() const
-    {
-        return right;
-    }
-    int GetTop() const
-    {
-        return top;
-    }
-    int GetBottom() const
-    {
-        return bottom;
-    }
-};
+#include "BoxCollider.h"
 
 template<typename T>
 concept BoxColliderType = std::convertible_to<T, BoxCollider>;
@@ -59,8 +24,14 @@ public:
         std::sort(colliders.begin(), colliders.end(), Predicator);
         for (unsigned int i = 0; i < colliders.size() - 1; ++i)
         {
-            if (static_cast<BoxCollider>(*colliders[i]).IsCollidingWith(*colliders[i + 1]))
-                collision_list.emplace_back(colliders[i], colliders[i + 1]);
+            for(unsigned int j = i + 1; j < colliders.size(); ++j)
+            {
+                if (static_cast<BoxCollider>(*colliders[i]).IsCollidingWith(*colliders[i + 1]))
+                {
+                    collision_list.emplace_back(colliders[i], colliders[j]);
+                    break;
+                }
+            }
         }
         return collision_list;
     }
