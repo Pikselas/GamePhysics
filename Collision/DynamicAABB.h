@@ -84,7 +84,7 @@ private:
         return new_parent;
     }
 private:
-    Node* searchBestSibling(BoxCollider collider)
+    Node* searchBestSibling(BoxCollider collider) const
     {        
         struct NodeCost
         {
@@ -168,6 +168,32 @@ public:
             root = new Node();
             root->bounding_box = collider;
         }
+    }
+    std::vector<BoxCollider> TestOverlaps(BoxCollider collider) const
+    {
+        std::vector<BoxCollider> colliders;
+        if(root && root->bounding_box.IsCollidingWith(collider))
+        {
+            std::stack<Node*> s;
+            s.push(root);
+            while(!s.empty())
+            {
+                auto node = s.top();
+                s.pop();
+                
+                if(node->IsLeafNode())
+                {
+                    colliders.push_back(node->bounding_box);
+                    continue;
+                }
+
+                if(node->left_child && node->left_child->bounding_box.IsCollidingWith(collider))
+                    s.push(node->left_child);
+                if(node->right_child && node->right_child->bounding_box.IsCollidingWith(collider))
+                    s.push(node->right_child);
+            }
+        }
+        return colliders;
     }
 public:
     void Traverse() const

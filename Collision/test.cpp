@@ -10,6 +10,10 @@ int main()
     t.Insert(BoxCollider{15 , 35 , 40 , 40});
     t.Insert(BoxCollider{50 , 65 , 5 , 70});
 
-    t.Traverse();
+    for(auto c : t.TestOverlaps({ 12 , 14 , 5 , 15}))
+    {
+        std::cout << c.GetLeft() << ',' << c.GetRight() << ',' << c.GetTop() << ',' << c.GetBottom() << '\n';
+    }
+
     return 0;
 }
