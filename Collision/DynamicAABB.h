@@ -1,5 +1,7 @@
+#pragma once
 #include <queue>
 #include <algorithm>
+#include <stack>
 #include "BoxCollider.h"
 
 class BinaryBoundingBoxTree
@@ -13,7 +15,7 @@ private:
         BoxCollider bounding_box;
     public:
         Node() : parent(nullptr) , left_child(nullptr) , right_child(nullptr){}
-        Node(BoxCollider collider) : bounding_box(collider){}
+        Node(BoxCollider collider) : bounding_box(collider) , parent(nullptr) , left_child(nullptr) , right_child(nullptr) {}
         ~Node()
         {
             if(left_child)
@@ -29,6 +31,11 @@ private:
     };
 private:
     Node* root = nullptr;
+public:
+    ~BinaryBoundingBoxTree()
+    {
+        delete root;
+    }
 private:
     static BoxCollider makeUnion(BoxCollider collider1 , BoxCollider collider2)
     {
@@ -47,15 +54,26 @@ private:
     static int calculateTotalAncestorCost(Node* node , BoxCollider collider)
     {
         int cost = 0;
-        node = node->parent;
-        while(node)
+        if(node)
         {
-            cost += calculateInheritedCost(node , collider);
+            while(node = node->parent)
+            {
+                cost += calculateInheritedCost(node , collider);
+            }
         }
         return cost;
     }
-private:
-    Node* createNewParent(BoxCollider collider , Node* child)
+    static void refitAncestors(Node* node , BoxCollider collider)
+    {
+        if(node)
+        {
+            while(node = node->parent)
+            {
+                node->bounding_box = makeUnion(node->bounding_box , collider);
+            }
+        }
+    }
+    static Node* createNewParent(BoxCollider collider , Node* child)
     {
         Node* new_parent = new Node();
         new_parent->right_child = child;
@@ -63,22 +81,26 @@ private:
         new_parent->left_child->parent = new_parent;
         new_parent->right_child->parent = new_parent;
         new_parent->bounding_box = makeUnion(collider , child->bounding_box);
+        return new_parent;
     }
 private:
-    Node* searchBestSibling(BoxCollider collider) const
+    Node* searchBestSibling(BoxCollider collider)
     {        
         struct NodeCost
         {
             Node* node;
             int cost;
+            
+            NodeCost() : node(nullptr) , cost(0){}
+            NodeCost(Node* node , int cost) : node(node) , cost(cost){}
 
-            bool operator > (NodeCost n)
+            bool operator< (const NodeCost& n) const
             {
-                return cost > n.cost;
+                return cost < n.cost;
             }
         };
 
-        NodeCost best_node = {0};
+        NodeCost best_node;
 
         std::priority_queue<NodeCost> s;
         s.emplace(root , root->bounding_box.GetArea());
@@ -115,7 +137,25 @@ public:
         {
             if(!root->IsLeafNode())
             {
-
+                auto n = searchBestSibling(collider);
+                auto prev_parent = n->parent;
+                auto new_parent = createNewParent(collider , n);
+                if(n == root)
+                {
+                    root = new_parent;
+                }
+                else
+                {
+                    if(prev_parent->left_child == n)
+                    {
+                        prev_parent->left_child = new_parent;
+                    }
+                    else
+                    {
+                        prev_parent->right_child = new_parent;
+                    }
+                }
+                refitAncestors(new_parent , collider);
             }
             else
             {
@@ -127,6 +167,25 @@ public:
         {
             root = new Node();
             root->bounding_box = collider;
+        }
+    }
+public:
+    void Traverse() const
+    {
+        if(root)
+        {
+            std::stack<Node*> s;
+            s.push(root);
+            while(!s.empty())
+            {
+                auto n = s.top();
+                s.pop();
+                std::cout << n->bounding_box.GetLeft() << ','  << n->bounding_box.GetRight() << ',' << n->bounding_box.GetTop() << ',' << n->bounding_box.GetBottom() << '\n';
+                if(n->left_child)
+                    s.push(n->left_child);
+                if(n->right_child)
+                    s.push(n->right_child);
+            }
         }
     }
 };

@@ -4,7 +4,12 @@
 int main()
 {
     BinaryBoundingBoxTree t;
-    auto b = t.makeUnion(BoxCollider{5 , 10 , 5 , 10} , BoxCollider{15 , 25 , 25 , 45});
-    std::cout << b.GetLeft() << ',' << b.GetRight() << '\n' << b.GetTop() << ',' << b.GetBottom();
+    
+    t.Insert(BoxCollider{10 , 20 , 10 , 20});
+    t.Insert(BoxCollider{5 , 25 , 10 , 50});
+    t.Insert(BoxCollider{15 , 35 , 40 , 40});
+    t.Insert(BoxCollider{50 , 65 , 5 , 70});
+
+    t.Traverse();
     return 0;
 }
