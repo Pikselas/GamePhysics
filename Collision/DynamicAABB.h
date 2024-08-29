@@ -6,9 +6,11 @@
 
 class BinaryBoundingBoxTree
 {
-private:
+public:
     struct Node
     {
+        friend BinaryBoundingBoxTree;
+    private:
         Node* parent;
         Node* left_child;
         Node* right_child;
@@ -22,6 +24,11 @@ private:
                 delete left_child;
             if(right_child)
                 delete right_child;
+        }
+    public:
+        BoxCollider GetCollider() const
+        {
+            return bounding_box;
         }
     public:
         bool IsLeafNode() const
@@ -63,19 +70,31 @@ private:
         }
         return cost;
     }
-    static void refitAncestors(Node* node , BoxCollider collider)
+    static void refitAncestors(Node* node)
     {
         if(node)
         {
             while(node = node->parent)
             {
-                node->bounding_box = makeUnion(node->bounding_box , collider);
+                if(node->left_child && node->right_child)
+                {
+                    node->bounding_box = makeUnion(node->left_child->bounding_box , node->right_child->bounding_box);
+                }
+                else if(node->left_child)
+                {
+                    node->bounding_box = node->left_child->bounding_box;
+                }
+                else
+                {
+                    node->bounding_box = node->right_child->bounding_box;
+                }
             }
         }
     }
     static Node* createNewParent(BoxCollider collider , Node* child)
     {
         Node* new_parent = new Node();
+        child->parent = new_parent;
         new_parent->right_child = child;
         new_parent->left_child = new Node(collider);
         new_parent->left_child->parent = new_parent;
@@ -154,8 +173,9 @@ public:
                     {
                         prev_parent->right_child = new_parent;
                     }
+                    new_parent->parent = prev_parent;
                 }
-                refitAncestors(new_parent , collider);
+                refitAncestors(new_parent);
             }
             else
             {
@@ -169,9 +189,9 @@ public:
             root->bounding_box = collider;
         }
     }
-    std::vector<BoxCollider> TestOverlaps(BoxCollider collider) const
+    std::vector<Node*> TestOverlaps(BoxCollider collider) const
     {
-        std::vector<BoxCollider> colliders;
+        std::vector<Node*> colliders;
         if(root && root->bounding_box.IsCollidingWith(collider))
         {
             std::stack<Node*> s;
@@ -183,7 +203,7 @@ public:
                 
                 if(node->IsLeafNode())
                 {
-                    colliders.push_back(node->bounding_box);
+                    colliders.push_back(node);
                     continue;
                 }
 
@@ -194,6 +214,52 @@ public:
             }
         }
         return colliders;
+    }
+    void RemoveNode(Node* node)
+    {
+      auto DebugNode = [](const char* str , Node* node){ std::cout << str  << node->GetCollider().GetLeft() << ',' << node->GetCollider().GetTop() << '\n'; };
+    //   DebugNode("NODE " , node);
+      if(node == root)
+      {
+        delete root;
+        root = nullptr;
+      }
+      else
+      {
+        auto parent = node->parent;
+        auto sibling = parent->left_child == node ? parent->right_child : parent->left_child;
+
+        // DebugNode("ROOT " , root);
+        // DebugNode("PARENT " , parent);
+        // DebugNode("SIBLING " , sibling);
+
+        // if parent is root then set the sibling as root
+        if(parent == root)
+        {
+            root = sibling;
+            sibling->parent = nullptr;
+        }
+        // else set the sibling as direct descendent of it's grand-parent
+        else
+        {
+            // std::cout << (parent->parent == nullptr);
+            // DebugNode("PARENT PARENT " , parent->parent);
+            if(parent->parent->left_child == parent)
+            {
+                parent->parent->left_child = sibling;
+            }
+            else
+            {
+                parent->parent->right_child = sibling;
+            }
+            sibling->parent = parent->parent;
+        }
+        // DebugNode("ROOT " , root);
+        refitAncestors(parent);
+        parent->left_child = parent->right_child = nullptr;
+        delete node;
+        delete parent;
+      }
     }
 public:
     void Traverse() const
