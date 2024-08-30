@@ -189,6 +189,92 @@ public:
             root->bounding_box = collider;
         }
     }
+    void RemoveNode(Node* node)
+    {
+      if(node == root)
+      {
+        delete root;
+        root = nullptr;
+      }
+      else
+      {
+        auto parent = node->parent;
+        auto sibling = parent->left_child == node ? parent->right_child : parent->left_child;
+
+        // if parent is root then set the sibling as root
+        if(parent == root)
+        {
+            root = sibling;
+            sibling->parent = nullptr;
+        }
+        // else set the sibling as direct descendent of it's grand-parent
+        else
+        {
+            if(parent->parent->left_child == parent)
+            {
+                parent->parent->left_child = sibling;
+            }
+            else
+            {
+                parent->parent->right_child = sibling;
+            }
+            sibling->parent = parent->parent;
+        }
+        refitAncestors(parent);
+        parent->left_child = parent->right_child = nullptr;
+        delete node;
+        delete parent;
+      }
+    }
+public:
+    std::vector<std::pair<Node* , Node*>> TestOverlaps() const
+    {
+        std::vector<std::pair<Node* , Node*>> colliders;
+        if(root && !root->IsLeafNode())
+        {
+            std::stack<std::pair<Node* , Node*>> s;
+            s.emplace(root->left_child , root->right_child);
+            while(!s.empty())
+            {
+                auto [n1 , n2] = s.top();
+                s.pop();
+                if(n1->bounding_box.IsCollidingWith(n2->bounding_box))
+                {
+                    if(n1->IsLeafNode() && n2->IsLeafNode())
+                    {
+                        colliders.emplace_back(n1 , n2);
+                    }
+                    else
+                    {
+                        Node* leaf_node = nullptr;
+                        Node* non_leaf_node = nullptr;
+                        if(n1->IsLeafNode())
+                        {
+                           leaf_node = n1;
+                           non_leaf_node = n2;
+                        }
+                        else
+                        {
+                            leaf_node = n2;
+                            non_leaf_node = n1;
+                        }
+
+                        s.emplace(leaf_node , non_leaf_node->left_child);
+                        s.emplace(leaf_node , non_leaf_node->right_child);
+                    }
+                }
+                else
+                {
+                    if(!n1->IsLeafNode())
+                        s.emplace(n1->left_child , n1->right_child);
+                    
+                    if(!n2->IsLeafNode())
+                        s.emplace(n2->left_child , n2->right_child);
+                }
+            }
+        }
+        return colliders;
+    }
     std::vector<Node*> TestOverlaps(BoxCollider collider) const
     {
         std::vector<Node*> colliders;
@@ -214,52 +300,6 @@ public:
             }
         }
         return colliders;
-    }
-    void RemoveNode(Node* node)
-    {
-      auto DebugNode = [](const char* str , Node* node){ std::cout << str  << node->GetCollider().GetLeft() << ',' << node->GetCollider().GetTop() << '\n'; };
-    //   DebugNode("NODE " , node);
-      if(node == root)
-      {
-        delete root;
-        root = nullptr;
-      }
-      else
-      {
-        auto parent = node->parent;
-        auto sibling = parent->left_child == node ? parent->right_child : parent->left_child;
-
-        // DebugNode("ROOT " , root);
-        // DebugNode("PARENT " , parent);
-        // DebugNode("SIBLING " , sibling);
-
-        // if parent is root then set the sibling as root
-        if(parent == root)
-        {
-            root = sibling;
-            sibling->parent = nullptr;
-        }
-        // else set the sibling as direct descendent of it's grand-parent
-        else
-        {
-            // std::cout << (parent->parent == nullptr);
-            // DebugNode("PARENT PARENT " , parent->parent);
-            if(parent->parent->left_child == parent)
-            {
-                parent->parent->left_child = sibling;
-            }
-            else
-            {
-                parent->parent->right_child = sibling;
-            }
-            sibling->parent = parent->parent;
-        }
-        // DebugNode("ROOT " , root);
-        refitAncestors(parent);
-        parent->left_child = parent->right_child = nullptr;
-        delete node;
-        delete parent;
-      }
     }
 public:
     void Traverse() const

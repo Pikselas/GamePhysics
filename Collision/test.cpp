@@ -3,6 +3,9 @@
 
 int main()
 {
+
+    auto print_box = [](BoxCollider c) { std::cout << c.GetLeft() << ',' << c.GetRight() << ',' << c.GetTop() << ',' << c.GetBottom() << '\n'; };
+
     BinaryBoundingBoxTree t;
     
     t.Insert(BoxCollider{10 , 20 , 10 , 20});
@@ -10,13 +13,14 @@ int main()
     t.Insert(BoxCollider{15 , 35 , 40 , 40});
     t.Insert(BoxCollider{50 , 65 , 5 , 70});
 
-    auto n = t.TestOverlaps({ 12 , 14 , 5 , 15});
+    auto n = t.TestOverlaps();
 
-    for(auto c : n)
+    for(auto [c1 , c2] : n)
     {
-        std::cout << c->GetCollider().GetLeft() << '\n';
-        t.RemoveNode(c);
+        print_box(c1->GetCollider());
+        print_box(c2->GetCollider());
+        std::cout << "\n";
     }
-    t.Traverse();
+    // t.Traverse();
     return 0;
 }
